@@ -1,38 +1,47 @@
-name: Push-to-EC2
+name: Deploy React App to EC2
 
-# Trigger deployment only on push to main branch
 on:
   push:
     branches:
       - main
 
 jobs:
-  deploy:
-    name: Deploy to EC2 on master branch push
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout the files
-        uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Deploy to Server 1
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build React app
+        run: npm run build
+
+      - name: Deploy build folder to EC2
         uses: easingthemes/ssh-deploy@main
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.HOST_DNS }}
           REMOTE_USER: ${{ secrets.USERNAME }}
-          TARGET: ${{ secrets.TARGET_DIR }}
+          SOURCE: build
+          TARGET: /var/www/html
 
-      - name: Executing remote ssh commands using ssh key
+      - name: Ensure Apache is running
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo apt-get -y update
-            sudo apt-get install -y apache2
+            sudo apt update
+            sudo apt install -y apache2
             sudo systemctl start apache2
             sudo systemctl enable apache2
-            cd home
-            sudo mv * /var/www/html
+            sudo chown -R $USER:$USER /var/www/html
