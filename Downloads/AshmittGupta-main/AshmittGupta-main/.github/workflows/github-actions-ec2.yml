@@ -1,4 +1,4 @@
-name: Deploy to EC2 on push
+name: Deploy to EC2
 
 on:
   push:
@@ -7,38 +7,43 @@ on:
 
 jobs:
   deploy:
+    name: Deploy React/Next.js App to EC2
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: 📦 Checkout Code
         uses: actions/checkout@v2
 
-      - name: Install dependencies
+      - name: 📥 Install Dependencies
         run: npm install
+        working-directory: .
 
-      - name: Build Next.js app
+      - name: 🛠️ Build Next.js App
         run: npm run build
+        working-directory: .
 
-      - name: Export static site
+      - name: 📤 Export Static Site
         run: npm run export
+        working-directory: .
 
-      - name: Upload `out` folder to EC2
+      - name: 🚀 Deploy to EC2 using rsync (via ssh-deploy)
         uses: easingthemes/ssh-deploy@main
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.HOST_DNS }}
           REMOTE_USER: ${{ secrets.USERNAME }}
-          SOURCE: out
-          TARGET: /var/www/html
+          TARGET: ${{ secrets.TARGET_DIR }}/
 
-      - name: Start Apache and move files (optional cleanup)
+      - name: 🧩 Setup Apache on EC2 & Move Files
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo apt update
-            sudo apt install -y apache2
+            sudo apt-get -y update
+            sudo apt-get install -y apache2
+            sudo systemctl start apache2
             sudo systemctl enable apache2
-            sudo systemctl restart apache2
+            sudo rm -rf /var/www/html/*
+            sudo mv ${{ secrets.TARGET_DIR }}/out/* /var/www/html/
