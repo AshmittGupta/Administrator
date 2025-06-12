@@ -1,3 +1,5 @@
+'use client';
+
 import { Card, Title, Text, BarChart, LineChart, Grid, DateRangePicker } from '@tremor/react';
 import { format, subMonths } from 'date-fns';
 
@@ -19,6 +21,14 @@ async function getAnalytics() {
     monthlyData,
     sessionData,
   };
+}
+
+function formatDuration(value: number) {
+  return `${value} min`;
+}
+
+function formatPercentage(value: number) {
+  return `${value}%`;
 }
 
 export default async function Analytics() {
@@ -53,7 +63,7 @@ export default async function Analytics() {
             index="month"
             categories={['Average Duration']}
             colors={['green']}
-            valueFormatter={(value) => `${value} min`}
+            valueFormatter={formatDuration}
           />
         </Card>
 
@@ -66,7 +76,7 @@ export default async function Analytics() {
             index="month"
             categories={['Completion Rate']}
             colors={['orange']}
-            valueFormatter={(value) => `${value}%`}
+            valueFormatter={formatPercentage}
           />
         </Card>
       </Grid>

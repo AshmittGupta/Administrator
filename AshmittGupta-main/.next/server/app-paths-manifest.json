@@ -1,6 +1,12 @@
 {
+  "/_not-found": "app/_not-found.js",
   "/analytics/page": "app/analytics/page.js",
+  "/login/page": "app/login/page.js",
+  "/courses/page": "app/courses/page.js",
   "/page": "app/page.js",
+  "/settings/page": "app/settings/page.js",
   "/users/page": "app/users/page.js",
-  "/settings/page": "app/settings/page.js"
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/lessons/page": "app/dashboard/lessons/page.js",
+  "/dashboard/analytics/page": "app/dashboard/analytics/page.js"
 }
