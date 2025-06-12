@@ -7,43 +7,42 @@ on:
 
 jobs:
   deploy:
-    name: Deploy React/Next.js App to EC2
+    name: Deploy Next.js App to EC2
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📦 Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: 📥 Install Dependencies
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
         run: npm install
-        working-directory: .
 
-      - name: 🛠️ Build Next.js App
+      - name: Build Next.js app
         run: npm run build
-        working-directory: .
 
-      - name: 📤 Export Static Site
-        run: npm run export
-        working-directory: .
-
-      - name: 🚀 Deploy to EC2 using rsync (via ssh-deploy)
+      - name: Copy files to EC2
         uses: easingthemes/ssh-deploy@main
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.HOST_DNS }}
           REMOTE_USER: ${{ secrets.USERNAME }}
-          TARGET: ${{ secrets.TARGET_DIR }}/
+          TARGET: ${{ secrets.TARGET_DIR }}
+          EXCLUDE: ".git,node_modules,.github"
 
-      - name: 🧩 Setup Apache on EC2 & Move Files
+      - name: Run app on EC2 with PM2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo apt-get -y update
-            sudo apt-get install -y apache2
-            sudo systemctl start apache2
-            sudo systemctl enable apache2
-            sudo rm -rf /var/www/html/*
-            sudo mv ${{ secrets.TARGET_DIR }}/out/* /var/www/html/
+            cd ${{ secrets.TARGET_DIR }}
+            npm install
+            pm2 delete all || true
+            pm2 start npm --name "ashmitt-app" -- start
+            pm2 save
